@@ -1,0 +1,501 @@
+Conceptos general---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL: Lenguaje de consulta, no es un lenguaje de programación.
+
+
+
+Lenguaje no SQL: Cuando accedemos a datos que no están en el modelo relacional, no podemos usar SQL, usamos no SQL.
+
+
+
+Usar modelos no relacionales y modelos relacionales: En un proyecto grande se pueden usar ambos modelos según lo que queramos hacer.
+
+
+
+Servidor: Es el programa MySQL que corre en el PC, guarda y administra los datos. Está encendido de fondo, probablemente desde el puerto 3306.
+Cada vez que instalamos MySQL es instalar un servidor, si queremos otro servidor hay que volver a instalar MySQL pero seleccionando un puerto distinto (al que ya usamos), un nombre distinto, y una carpeta de datos distinta (seguiremos usando el mismo MySQL Workbench, pero debemos crear una nueva conexión y seleccionar el puerto de ese nuevo servidor).
+
+
+
+Base de datos: Es un contenedor dentro del servidor, donde cada proyecto suele tener su propia base de datos.
+Dentro de cada base de datos viven las tablas que contienen a los datos.
+
+
+
+Conexión: Es un atajo guardado en MySQL Workbench para acceder a un servidor teniendo su dirección y puerto, y accediendo con un usuario y contraseña.
+A nivel local, no es útil tener más de una conexión para el mismo servidor.
+
+A nivel no local (en un entorno de trabajo con un servidor remoto) sí es muy útil porque cada trabajador va a tener un usuario y contraseña, donde cada usuario tendrá permisos distintos, ahí cada usuario necesita su propia conexión en MySQL Workbench.
+En ese caso, el administrador del servidor deberá crear cada usuario con su contraseña y sus permisos para cada trabajador y cada trabajador debe hacer la conexión en su MySQL Workbench con la dirección, el puerto, el usuario, y la contraseña que el administrador le entregó.
+Ej:
+*Un usuario de administrador puede crear usuarios, hacer backups, cambiar configuración.
+*Un usuario de desarrollo puede crear y modificar tablas.
+*Un usuario de lectura puede consultar o sacar reportes sin riesgo de borrar nada.
+
+
+
+Extensión MySQL en VS Code: Hace el mismo trabajo que el Workbench, crea una conexión hacia un servidor teniendo su dirección y puerto, y accediendo con un usuario y contraseña, pero ahora en el mismo VS Code puedo seleccionar una base de datos y ejecutar consultas (aunque Workbench tiene más herramientas).
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+MySQL (local)---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+MySQL: Es un software que permite crear mi propia base de datos o usar una externa y a la vez gestionarla (cargar datos, organizar datos, etc.).
+Por defecto MySQL tiene 4 bases de datos que usa para que el mismo funcione.
+El problema es que MySQL no tiene pantalla ni botones, es un programa que se usa mediante la terminal MySQL Command Line.
+Para interactuar con la base de datos es mejor aplicaciones gráficas que hacerlo solo con la terminal.
+
+
+
+Aplicaciones gráficas para interactuar con la base de datos: La que usaremos es MySQL Workbench, que es una aplicación gráfica de la misma empresa de MySQL.
+En la pestaña de Query es donde podemos escribir SQL.
+Hay muchas cosas que se hacen más fácil sin código que con código.
+En MySQL, esquema = base de datos.
+El rayo es para ejecutar el código del Query.
+
+Al hacer setup de conexión en Default Schema se pone el nombre de la base de datos a la que nos queremos conectar.
+
+
+
+Columnas en MySQL: 
+PK (Primary Key): marca la columna como llave primaria de la tabla.
+NN (Not Null): la columna no puede tener valores nulos (NULL).
+UQ (Unique): los valores de la columna deben ser únicos (no se repiten) (sirve para darle la característica de llave sin tener que decir que es la llave primaria)
+B (Binary): trata los datos como binarios (afecta comparaciones, sensibilidad a mayúsculas/minúsculas en strings).
+UN (Unsigned): solo aplica a tipos numéricos; indica que el valor no puede ser negativo (solo positivos y cero).
+ZF (Zerofill): rellena el valor numérico con ceros a la izquierda hasta completar el ancho definido (por ejemplo, 5 con ancho 4 se muestra como 0005).
+AI (Auto Increment): el valor se incrementa automáticamente en cada nuevo registro (típico en claves primarias tipo ID).
+G (Generated Column): indica que la columna es una columna generada, es decir, su valor se calcula automáticamente a partir de una expresión o de otras columnas, en lugar de insertarse manualmente.
+
+
+
+Ejecutar en Query SQL: Apretar el rayo o usar CTRL+ENTER
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Álgebra relacional y Cálculo relacional---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Ver iPad, ahí está todo explicado.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+SQL (Leer SQL_apuntes_codigo antes)---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Comas en SQL: Usamos la coma en los siguientes casos
+1. Separar columnas en el SELECT: SELECT country, MAX(age) AS mayor_edad, MIN(age) AS menor_edad FROM users
+2. Separar valores en el IN: SELECT * FROM users WHERE country IN ('CL', 'AR', 'PE');
+3. Separar columnas en el GROUP BY: SELECT country, city, COUNT(*) FROM users GROUP BY country, city;
+4. Separar columnas en el ORDER BY: SELECT name, age FROM users ORDER BY age DESC, name ASC;
+5. Separar argumentos dentro de una función: SELECT CONCAT(name, ' ', email) FROM users;
+6. Separar valores en un INSERT: INSERT INTO users (name, email, age) VALUES ('Jorge', 'jorge@mail.com', 25);
+
+
+
+Orden de pensamiento de SQL:
+1. FROM        → de qué tabla(s) vienen los datos
+2. JOIN        → se combinan con otras tablas
+3. WHERE       → se filtran filas individuales
+4. GROUP BY    → se agrupan las filas filtradas
+5. HAVING      → se filtran los grupos ya agrupados por GROUP BY
+6. SELECT      → se calculan/eligen las columnas a mostrar (sigue teniendo acceso a la fila entera si es que no hubo un GROUP BY)
+7. DISTINCT    → se eliminan duplicados (si aplica)
+8. ORDER BY    → se ordena el resultado
+9. LIMIT/OFFSET → se recorta el resultado (paginación)
+
+Cuando se usa GROUP BY o DISTINCT, se están fusionando filas, esto provoca que en las filas fusionadas SQL no sabe con cuál valor del resto de columnas quedarse, provocando que de error si queremos mostrar una columna donde SQL no sabe con cuál quedarse.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Índices y algoritmos de join---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Acceso a memoria:
+*Acceso secuencial: Acceder a los datos en orden
+Ej: Al hacer SELECT * FROM Planeta WHERE nombre = 'Venus' se leen todas las tuplas de la relación R y se seleccionan las que cumplen la condición.
+*Acceso aleatorio: Acceder a los datos sin un orden
+
+
+
+Discos duros vs RAM: Si la RAM es más rápida, ¿por qué no usamos solo RAM? porque el disco duro es más barato por GB y puede conservar los datos aunque se apague el equipo (la RAM se borra al perder energía).
+
+
+
+Tupla: Recordar que una tupla es una fila de una tabla.
+
+
+
+Memoria secundaria (Disco Duro): Es donde viven permanentemente los datos, la lectura no se hace tupla por tupla sino por bloques, esto provoca que aunque solo pidamos un registro, el disco siempre lee el bloque completo.
+Cuando se usa memoria secundaria diremos que se usa el disco.
+
+Decimos que un bloque tiene un tamaño de B tuplas.
+
+
+
+Memoria principal (RAM): Es donde se procesan los datos (compararlos, ordenarlos, hacer cálculos), los datos primero hay que traerlos desde el disco.
+Cuando se usa memoria principal diremos que se usa la memoria.
+
+Decimos que una memoria RAM tiene una capacidad de M tuplas, es decir, caben M tuplas de forma simultánea.
+
+
+
+Modelo de costos clásico: Tiene 3 reglas
+*Solo se cuentan los accesos a memoria secundaria (disco)
+*Cada vez que se lee o se escribe un bloque se suma 1 al costo
+*Se asume que todo lo que se haga en memoria principal (ram) es despreciable
+
+Algunas fórmulas del modelo de costos son
+*Si cada bloque tiene B tuplas y necesitamos leer n tuplas, el costo es ⌈n/B​⌉ con función techo.
+*Si la memoria principal (ram) tiene capacidad para M tuplas y cada bloque trae B tuplas, caben ⌊M/B​⌋ bloques completos de forma simultánea en la memoria.
+*Sea |R| el número de tuplas que tiene la relación (tabla), si cada bloque tiene B tuplas, se necesitan ⌈|R|/B​⌉ bloques para almacenar toda la relación en disco. 
+
+
+
+Índice Hash: Un índice es una estructura auxiliar que permite encontrar una tupla específica sin tener que escanear toda la tabla.
+Un tipo específico de índice es el índice Hash, su proceso tiene 4 partes
+
+*Las llaves: Es el valor por el que queremos buscar. 
+Ej: Nombre del planeta (SELECT * FROM Planeta WHERE nombre = 'Venus')
+
+*Función Hash: Es una función matemática que toma la llave y la convierte en un número (este lo podemos pensar como un cajón). 
+Ej: La función Hash toma "Mercurio" y calcula que debe ir al cajón 001
+
+*Cajones: Son casillas numeradas donde la función hash guarda cada llave. 
+Ej: Cajón 001
+
+*Datos: Cada cajón apunta a la ubicación real en disco donde está guardada la tupla.
+
+Los cajones son limitados, por lo que llaves distintas pueden tener el mismo número de cajón.
+Cuando pasa eso, las llaves se guardan una tras otra (como una lista enlazada).
+
+
+
+Índice Árbol B: En un árbol B, un nodo puede tener muchos hijos y cada nodo puede guardar muchos valores.
+Nace como una solución a que el índice Hash es inútil para rangos (Ej: SELECT * FROM Planeta WHERE temp>100 AND temp<200).
+Cada nodo del árbol se diseña para que ocupe exactamente un bloque (B tuplas).
+
+
+
+Índice Árbol B+: Es lo más usado en la práctica, es igual al árbol B pero tiene 3 diferencias importantes
+*Los nodos internos solo sirven para navegar
+*Las tuplas se guardan en las hojas del árbol
+*Se conectan las hojas para hacer búsquedas por rango más eficientes, formando una lista enlazada a través de las hojas
+
+Podemos especificar el número de hijos de cada nodo interno.
+*Árbol B+ k -> Es un árbol B+ donde cada nodo interno tiene k hijos
+Ej: Árbol B+ 2 -> Es un árbol B+ donde cada nodo interno tiene 2 hijos
+
+*Árbol B+ a-b -> Es un árbol B+ donde cada nodo interno tiene a o b hijos 
+Ej: Árbol B+ 2-3 -> Es un árbol B+ donde cada nodo interno tiene 2 o 3 hijos
+
+
+
+Cómo se crean y eliminan índices en SQL: Hay dos formas
+*Por defecto: SQL crea un índice para la llave primaria y para las restricciones de unicidad de la tabla, porque las llaves primarias y las columnas únicas son las que más se usan para buscar. 
+Ej: Llave primaria id, WHERE id = 5.
+
+*Crear índices manualmente sobre otros atributos: Para cualquier otra columna donde queramos acelerar búsquedas, podemos crear su índice con el comando CREATE INDEX. 
+Hay dos formas
+*Índice Hash: CREATE INDEX nombreIndice ON nombreTabla USING hash (atributo1, atributo2, ...)
+*Índice Árbol B+: CREATE INDEX nombreIndice ON nombreTabla (atributo1, atributo2, ...)
+
+Para eliminar un índice usamos DROP INDEX nombreIndice
+
+Varios atributos pueden quedar indexados por el mismo índice.
+
+Ej: En un Árbol B+, si usamos los atributos (anillo, temp), las llaves están ordenadas primero por anillo y dentro de cada valor de anillo están ordenadas por temp.
+(false, 186)  -- Marte
+(false, 288)  -- Tierra
+(false, 440)  -- Mercurio
+(false, 730)  -- Venus
+(true, 53)    -- Neptuno
+(true, 76)    -- Urano
+(true, 134)   -- Saturno
+(true, 152)   -- Júpiter
+
+Es útil usar un índice compuesto cuando las consultas que haremos filtran por ambas columnas a la vez.
+
+Otro Ej: En Hash, si usamos los atributos (anillo, temp), se combinan ambos valores en una sola llave y se le aplica la función Hash a la combinación.
+
+
+
+Equi Join: Es cualquier join (inner join, left join, right join) cuya condición es una igualdad entre atributos de dos tablas.
+
+Ej de left join que es un equi join:
+SELECT nombre, nave
+FROM Planeta LEFT JOIN Aterrizaje
+ON nombre = planeta
+
+Ej de un inner join que es un equi join:
+SELECT nave, nombre, dist, año
+FROM Planeta INNER JOIN Aterrizaje
+ON nombre = planeta
+
+
+
+Recordatorio de Inner Join con la sintaxis antigua: En los apuntes de código está explicado el Inner Join pero con la sintaxis nueva, con la sintaxis antigua no se pone explícitamente INNER JOIN ni la condición usando ON. 
+
+*Sintaxis nueva (INNER JOIN y ON explícito): 
+SELECT atributos
+FROM Tabla1 [alias1] INNER JOIN Tabla2 [alias2]
+ON condiciónDeJoin
+[WHERE otrasCondiciones]
+Ej:
+SELECT nave, nombre, dist, año
+FROM Planeta 
+INNER JOIN Aterrizaje ON nombre = planeta
+WHERE año > 1975
+
+*Sintaxis antigua:
+SELECT atributos
+FROM Tabla1 [alias1], Tabla2 [alias2], ...
+WHERE condiciónDeJoin [AND otrasCondiciones]
+Ej:
+SELECT nave, nombre, dist, año
+FROM Planeta, Aterrizaje
+WHERE nombre = planeta AND año > 1975
+
+
+
+Loop anidado sin índices: Es el algoritmo más simple para calcular un join (de cualquier tipo), se tenga R join S, la idea es similar a cuando se tiene un while dentro de un while
+
+Para cada tupla r ∈ R:
+    Para cada tupla s ∈ S:
+        Si r y s satisfacen el join:
+            escribir {r} × {s}
+
+Así, supongamos que tenemos 
+R: [ 4 | 2 | 2 ][ 6 | 3 | 1 ][ ... ]
+S: [ 5 | 3 | 2 ][ 4 | 7 | 4 ] ... ]
+
+Con la condición del join, r = s
+
+Donde R y S son dos archivos en disco, divididos en bloques (separados por []), cada bloque está en el disco (memoria secundaria). Cada bloque tiene casillas (separadas por |), cada casilla es una tupla y el número de dentro de cada casilla es el valor del atributo por el que se hace el join.
+
+El funcionamiento del algoritmo de loop anidado es que, se toma r = 4, y el algoritmo recorre todo S comparando y encontrando cuando se satisface la condición del join, así
+4 con 5, 4 con 3, 4 con 2, 4 con 4 (se satisface), 4 con 7, ...
+
+Luego, pasa a la siguiente tupla de R, es decir, se toma r = 2 y el algoritmo recorre todo S comparando y encontrando cuando se satisface la condición del join para poder escribir {r} x {s}, así
+2 con 5, 2 con 3, 2 con 2 (se satisface), 2 con 4, 2 con 7, ...
+
+Se hace lo anterior hasta que ya no queden más tuplas en R.
+
+Las características del algoritmo son
+*El costo del algoritmo es ⌈|R|/B⌉ + |R|*⌈|S|/B⌉
+|R| es el número de tuplas de R (número de casillas)
+B es número de tuplas de cada bloque en disco
+
+Lo anterior nace de que se suma el costo de leer R completa más el costo de que por cada tupla de R se lee S completa.
+
+
+
+*Se necesitan 2B tuplas en la memoria
+Lo anterior nace de que se necesita 1 bloque para la parte de R que se lee y 1 bloque para la parte de S que se lee.
+
+*Para ahorrar costos debemos elegir como R y S tq |R| < |S|
+
+
+
+Loop anidado con índices: Es la misma idea que "Loop anidado sin índices" pero ahora no se recorre S de forma completa sino que se usa un índice sobre S para ir directo a las tuplas que calzan
+
+Para cada tupla r ∈ R:
+    Buscar s ∈ S en el índice tal que r y s satisfagan el join:
+        escribir {r} × {s}
+
+Así, supongamos que tenemos 
+R: [ 4 | 2 | 2 ][ 6 | 3 | 1 ][ ... ]
+S: [ 5 | 3 | 2 ][ 4 | 7 | 4 ] ... ]
+
+Con la condición del join, r = s
+
+Ahora, por cada r se hace una búsqueda en el índice de S usando el valor de r. Así, el índice permite encontrar directamente los s que satisfacen la condición del join con r, sin tener que recorrer S de forma completa.
+Luego, para cada s encontrada, se escribe {r} x {s}
+
+Las características del algoritmo son
+*El costo del algoritmo es  ⌈|R|/B⌉ + |R|*(Costo de buscar en el índice de S)
+Donde (Costo de buscar en el índice de S) puede ser
+ *⌈|S|/B⌉: Peor caso, los índices no sirvieron para nada 
+
+ *El índice está implementado con un árbol B+:
+     *Todo el árbol está en disco (raíz, nodos internos, hojas) -> O(log(⌈|S|/B⌉)).
+     La base del log() es según el número de hijos de cada nodo interno
+     
+     Si el árbol es B+ k, entonces O(logk(⌈|S|/B⌉))
+     Ej: Árbol B+ 2, tiene O(log2(⌈|S|/B⌉))
+
+     Si el árbol es B+ a-b, se usa el más chico entre a y b
+     Ej: Árbol B+ 2-3, tiene O(log2(⌈|S|/B⌉))
+
+     *Nodos internos en memoria y hojas en disco -> 1
+
+     *Todo el árbol está en memoria (raíz, nodos internos, hojas) -> O(1)
+
+ *O(1): Mejor caso, el índice está implementado con un hash en memoria
+
+¿Qué significa árbol B+ en memoria secundaria (disco)?
+Que el árbol completo está guardado en la memoria secundaria.
+
+*Se necesitan 2B tuplas en la memoria
+
+*Para ahorrar costos debemos elegir como R y S tq |R| < |S|.
+Aunque puede que el problema nos diga sobre qué tabla se usa el índice, esa tabla debe ser el S
+
+
+
+Hash join: La idea es cargar S completa en la memoria organizada con una tabla hash y luego recorrer R buscando en esa tabla hash.
+
+Guardar S en memoria 
+Para cada tupla r ∈ R:
+       Buscar s en memoria principal tal que r y s satisfagan el join:
+           escribir {r} × {s}
+
+Así, supongamos que tenemos 
+R: [ 4 | 2 | 2 ][ 6 | 3 | 1 ][ ... ]
+S: [ 5 | 3 | 2 ][ 4 | 7 | 4 ] ... ]
+
+Con la condición del join, r = s
+
+El funcionamiento del algoritmo de hash join es que, se lee S del disco, y por cada tupla s (cada casilla) se aplica la función hash a su valor de join (el número de dentro de  cada casilla) y se guarda en el cajón que corresponda según el hash.
+
+Ej:
+cajón A:  s con valor 1, s con valor 4, s con valor 4
+cajón B:  s con valor 2, s con valor 6
+cajón C:  s con valor 7
+
+Lo anterior es un ejemplo inventado, pero lo importante es saber que valores distintos pueden caer en el mismo cajón y que valores iguales siempre caen en el mismo cajón.
+
+Luego, R se lee del disco bloque por bloque, recorriendo R, por cada tupla r (cada casilla) se aplica la misma función hash al valor de join de r (el número de dentro de cada casilla) pues esto dice a qué cajón debe ir.
+Se va a ese cajón y se revisan las tuplas s que tiene, comparándolas con r, y encontrando cuando se satisface la condición del join para poder escribir {r} x {s}.
+
+Recordar que estamos trabajando sobre un equi join, así que la condición es un =, por esto es útil usar el hash pues siempre iremos a un cajón donde puede estar un igual.
+
+Las características del algoritmo son
+*El costo del algoritmo es ⌈|R|/B⌉ + ⌈|S|/B⌉
+Lo anterior pues se lee S completa una vez para construir la tabla hash en la memoria principal y se lee R completa una vez, bloque por bloque.
+Además, buscar en la tabla hash no suma costo pues esta está en la memoria.
+
+*Se necesitan |S| + B tuplas en la memoria
+Lo anterior pues se guardan todas las tuplas de S (|S|) y se lee R bloque por bloque (B)
+
+*Para ahorrar costos debemos elegir como R y S tq |S| < |R|
+
+
+
+Sort-merge join: La idea es ordenar R y S de menor a mayor según el atributo del join (el número de dentro de cada casilla) y luego recorrer R y S en paralelo.
+
+Ordenar R y S por los atributos del join
+Aplicar un merge-sort y, para cada tupla r y s que satisfagan el join:
+       escribir {r} × {s}
+
+Así, supongamos que tenemos 
+R: [ 4 | 2 | 2 ][ 6 | 3 | 1 ][ ... ]
+S: [ 5 | 3 | 2 ][ 4 | 7 | 4 ] ... ]
+
+Se ordena como
+R: [ 1 | 2 | 3 ][ 3 | 4 | 6 ][ ... ]
+S: [ 1 | 2 | 4 ][ 6 | 6 | 7] [ ... ]
+
+El funcionamiento del algoritmo de sort-merge join es que, se ordenan R y S, luego se ponen dos flechas, una en cada tabla, y se avanza hacia adelante
+*Si r < s, se avanza la flecha de R
+*Si r > s, se avanza la flecha de S
+*Si r = s, se satisface la condición del join, así que se escribe {r} x {s}
+
+Las características del algoritmo son
+*El costo del algoritmo es (costo del ordenamiento) + ⌈|R|/B⌉ + ⌈|S|/B⌉
+Donde si R y S ya están ordenadas, (costo del ordenamiento) = 0
+
+*Se necesitan 2B tuplas en memoria
+
+*No hay forma de ahorrar costos
+
+
+
+¿Cuál algoritmo es mejor?: Depende del contexto en el que se vayan a usar
+*Loop anidado sin índice: Siempre se puede usar, pero se suele usar como último recurso o cuando las tablas son muy pequeñas
+
+*Loop anidado con índice: Cuando el índice está disponible y hay pocas tuplas en R, y pocas tuplas en S que satisfacen el join
+
+*Hash join: Cuando S quepa en la memoria principal y haya muchas tuplas en R que satisfagan el join
+
+*Sort-merge join: Cuando R y S ya están ordenadas por los atributos del join y hay muchas tuplas en R y S que satisfacen el join
+
+
+
+EXPLAIN y ANALYZE: Como SQL es declarativo (decimos qué queremos pero no el cómo), el motor decide el plan, y los comandos EXPLAIN y ANALYZE permiten espiar qué hizo el motor.
+Tanto EXPLAIN como ANALYZE se ponen antes de la consulta.
+
+La forma de usarlos es 
+*EXPLAIN consulta -> Muestra el plan sin ejecutar la consulta
+*ANALYZE consulta -> Ejecuta la consulta y muestra análisis
+*EXPLAIN ANALYZE consulta -> Combina ambos
+
+¿Cuál es la diferencia entre mostrar el plan y mostrar el análisis?
+*El plan es lo que el motor pretende hacer y cuánto cree que costará
+Ej:
+Seq Scan on personaje100
+  (cost=0.00..53967.89 rows=2 width=47)
+
+*El análisis es lo que realmente pasó al ejecutar la consulta y cuánto costó de verdad 
+Ej:
+(actual time=6.683..402.203 rows=54 loops=1)
+Rows Removed by Filter: 2170472
+Execution time: 402.273 ms
+
+
+
+VIEW: Es una consulta guardada con un nombre, donde luego podemos usar la vista como si fuera una tabla.
+
+Las características son
+*No almacena datos, si la tabla sobre la que se hace la consulta cambia, la vista refleja el cambio automáticamente, porque siempre lee los datos actuales
+
+*Cada vez que se consulta la vista, el motor ejecuta la consulta que está guardada en la vista y la integra en el plan. Así, cuesta lo mismo que la consulta
+
+*Sirve para encapsular consultas complejas, reutilizar lógica (si varias consultas necesitan lo mismo, uso la vista), y restringir acceso (una persona que solo puede usar la vista, no tiene acceso a la tabla)
+
+La forma de usarlo es 
+CREATE VIEW nombreVista AS
+ consulta
+
+Ej:
+CREATE VIEW planetas_calidos AS
+  SELECT nombre, temperatura
+  FROM   planeta
+  WHERE  temperatura > 100;
+
+SELECT * FROM planetas_calidos;   -- Usamos la vista como una tabla
+
+
+
+MATERIALIZED VIEW: Es una vista que sí guarda el resultado en disco, la consulta se ejecuta una vez, el resultado se almacena, y después la podemos usar como si fuera una tabla.
+
+Las características son
+*Si almacena datos, si la tabla sobre la que se hace la consulta cambia, la vista no refleja el cambio automáticamente, porque se queda con los datos que tenía guardados (hay que refrescar la vista materializada)
+
+*Consultar una vista materializada cuesta lo mismo que leer una tabla y se le pueden crear índices encima
+
+*Sirve cuando la consulta es cara y se lee mucho más de lo que se escribe  (pues si ponemos una vista materializada sobre una tabla a la que le escribimos mucho, vamos a tener que actualizar la vista materializada todo el rato)
+
+La forma de usarlo es 
+CREATE MATERIALIZED VIEW nombreVista AS
+ consulta
+
+Ej:
+CREATE MATERIALIZED VIEW temp_por_sistema AS
+  SELECT sistema, AVG(temperatura) AS temp_media
+  FROM   planeta
+  GROUP BY sistema;
+
+REFRESH MATERIALIZED VIEW temp_por_sistema;  -- Refresca la vista materializada
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+

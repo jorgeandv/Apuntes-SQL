@@ -1,0 +1,1 @@
+SELECT AVG(age) FROM users; --Calcula el promedio de los datos de la columna age de la tabla users 
